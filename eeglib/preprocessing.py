@@ -1,8 +1,9 @@
-"This module define the functions for preprocessing the signal data"
+"""This module define the functions for preprocessing the signal data"""
 
 import numpy as np
 
-def bandPassFilter(data,sampleRate=None,highpass=None,lowpass=None):
+
+def bandPassFilter(data, sampleRate=None, highpass=None, lowpass=None):
     """
     Return the signal filtered between highpass and lowpass. Note that neither
     highpass or lowpass should be above sampleRate/2.
@@ -24,26 +25,26 @@ def bandPassFilter(data,sampleRate=None,highpass=None,lowpass=None):
     numpy.ndarray
         The signal filtered betwen the highpass and the lowpass
     """
-    size=len(data)
+    size = len(data)
     if not sampleRate:
-        sampleRate=size
+        sampleRate = size
 
     if highpass:
-        highpassP=int(highpass*size/sampleRate)
-        highpassN=-highpassP
+        highpassP = int(highpass * size / sampleRate)
+        highpassN = -highpassP
     else:
-        highpassP=highpassN=None
+        highpassP = highpassN = None
     if lowpass:
-        lowpassP=int(lowpass*size/sampleRate)
-        lowpassN=-lowpassP
+        lowpassP = int(lowpass * size / sampleRate)
+        lowpassN = -lowpassP
     else:
-        lowpassP=lowpassN=size//2
-            
-    fft=np.fft.fft(data)
-    
-    window=np.zeros(size)
-    window[highpassP:lowpassP]=1
-    window[lowpassN:highpassN]=1
-    
-    filtered_fft=fft*window
-    return np.real(np.fft.ifft(filtered_fft))  
+        lowpassP = lowpassN = size // 2
+
+    fft = np.fft.fft(data)
+
+    window = np.zeros(size)
+    window[highpassP:lowpassP] = 1
+    window[lowpassN:highpassN] = 1
+
+    filtered_fft = fft * window
+    return np.real(np.fft.ifft(filtered_fft))

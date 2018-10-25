@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"This module define the data structures that are used in this library"
+"""This module define the data structures that are used in this library"""
 
 import numpy as np
 
@@ -33,7 +31,7 @@ class SampleWindow:
         It stores the data.
     """
 
-    def __init__(self, windowSize, channelNumber,names=None):
+    def __init__(self, windowSize, channelNumber, names=None):
         """
         Creates a SampleWindow wich stores the value of windowSize as the
         number of samples and the value of channelNumber as the number of
@@ -52,14 +50,13 @@ class SampleWindow:
         self.windowSize = windowSize
         self.channelNumber = channelNumber
 
-        self.window = np.zeros((channelNumber,windowSize))
+        self.window = np.zeros((channelNumber, windowSize))
         if names:
-            self.__names=names
-            self.__windowDict={n:l for (n,l) in zip(names,self.window)}
+            self.__names = names
+            self.__windowDict = {n: l for (n, l) in zip(names, self.window)}
         else:
-            self.__names=None
+            self.__names = None
 
-    
     def set(self, samples, columnMode=False):
         """
         Sets multiple samples at a time. The sample number must be the same as
@@ -76,26 +73,26 @@ class SampleWindow:
             columnMode should be True.
         """
         if hasattr(samples, "__getitem__") \
-            and hasattr(samples[0], "__getitem__"):
+                and hasattr(samples[0], "__getitem__"):
             if((len(samples) == self.windowSize and
-                len(samples[0]) == self.channelNumber and not columnMode) 
+                len(samples[0]) == self.channelNumber and not columnMode)
                 or (len(samples) == self.channelNumber and
-                len(samples[0]) == self.windowSize and columnMode)):
+                    len(samples[0]) == self.windowSize and columnMode)):
                 if not columnMode:
                     self.window = np.transpose(np.array(samples))
                 else:
                     self.window = np.array(samples)
                 if self.__names:
                     for i in range(self.channelNumber):
-                        self.__windowDict[self.__names[i]]=self.window[i]
+                        self.__windowDict[self.__names[i]] = self.window[i]
             else:
                 raise ValueError(("the number of samples must be equal to the "
-                                 + "window size and each sample length must be"
-                                 +" a equals to channelNumber ( {0} ) if not"
-                                 +"in columnMode and viceversa if in"+
-                                 "columnMode").format(self.channelNumber))
+                                  + "window size and each sample length must be"
+                                  + " a equals to channelNumber ( {0} ) if not"
+                                  + "in columnMode and viceversa if in" +
+                                  "columnMode").format(self.channelNumber))
         else:
-            raise ValueError("samples must be a subscriptable object wich"+
+            raise ValueError("samples must be a subscriptable object wich" +
                              "contains subcriptable objects")
 
     def getChannel(self, i=None):
@@ -128,26 +125,27 @@ class SampleWindow:
                 raise ValueError("There aren't names asociated to the \
                                  channels.")
         elif type(i) is list:
-            selectedChannels=np.zeros((len(i),self.windowSize),dtype=np.float)
+            selectedChannels = np.zeros(
+                (len(i), self.windowSize), dtype=np.float)
             for c, e in enumerate(i):
                 if type(e) in [int, str]:
-                    selectedChannels[c]=self.getChannel(e)
+                    selectedChannels[c] = self.getChannel(e)
                 else:
                     raise ValueError("The list can only contain int and/or \
                                      strings.")
             return selectedChannels
-        elif type(i) in [int,slice]:
+        elif type(i) in [int, slice]:
             return self.window[i]
         else:
             raise ValueError("This method only accepts int, str, list or" +
-                             "slice types and not %s"%type(i))
+                             "slice types and not %s" % type(i))
 
     class SampleWindowIterator:
         """
         This class is used as a only for iterating over the data. It only has a
         __init__ method and __next__ method.
         """
-        
+
         def __init__(self, iterWindow):
             """
             Parameters
@@ -170,7 +168,7 @@ class SampleWindow:
         return self.SampleWindowIterator(self)
 
     def __getitem__(self, n):
-        return self.window[:,n]
+        return self.window[:, n]
 
     # Returns a string representation of the inner list
     def __str__(self):
@@ -210,7 +208,7 @@ class EEG:
         self.windowSize = windowSize
         self.sampleRate = sampleRate
         self.channelNumber = channelNumber
-        self.window = SampleWindow(windowSize, channelNumber,names=names)
+        self.window = SampleWindow(windowSize, channelNumber, names=names)
 
     # Function to handle the windowFunction parameter
     def __handleWindowFunction(self, windowFunction):
@@ -269,28 +267,28 @@ class EEG:
             The list of values of a specific channel.
         """
         return self.window.getChannel(i)
-    
+
     def __applyFunctionTo(self, function, i=None):
-        data=self.window.getChannel(i)
-        if len(np.shape(data))==1:
+        data = self.window.getChannel(i)
+        if len(np.shape(data)) == 1:
             return function(data)
         else:
             return np.array([function(d) for d in data])
-    
-    def __applyFunctionTo2C(self, function, channels = None,
+
+    def __applyFunctionTo2C(self, function, channels=None,
                             allPermutations=False):
         """
         Applies a function that uses two signals by selecting the channels to
         use. It will apply the function to different channels depending on the
         parameters. Note: a single channel can be selected by using an int or
         a string if a name for the channel was specified.
-        
+
         Parameters
         ----------
         function: function
             A function that receives two streams of data and will be applied to
             the selected channels.
-            
+
         channels: Variable type, optional
             * tuple of lenght 2 containing channel indexes: applies the
               function to the two channels specified by the tuple.
@@ -300,7 +298,7 @@ class EEG:
               list depending of the allPermutations parameter.
             * None: Are channels are used in the same way than in the list
               above. This is the default value.
-        
+
         allPermutations: bool, optional
             Only used when channels is a list of index or None. If True all
             permutations of the channels in every order are used; if False only
@@ -309,7 +307,7 @@ class EEG:
             (0,2), (0,4), (2,0), (2,4), (4,0), (4,2); meanwhile, with
             allPermutations = False, the channels used will be: (0,2), (0,4),
             (2,4). Default: False.
-            
+
         Returns
         -------
         If a tuple is passed the it returns the result of applying the function
@@ -319,10 +317,10 @@ class EEG:
         channels.
         """
         permutate = permutations if allPermutations else combinations
-        
+
         if channels == None:
             channels = list(range(self.channelNumber))
-        
+
         if type(channels) is tuple:
             if len(channels) != 2:
                 raise ValueError("If you specify a tuple, it must have \
@@ -334,21 +332,20 @@ class EEG:
             if t is tuple:
                 acs = np.array(channels)
                 if len(acs.shape) == 2 and acs.shape[1] == 2:
-                    return {c:function(*self.getChannel(list(c))) for c in 
+                    return {c: function(*self.getChannel(list(c))) for c in
                             channels}
                 else:
                     raise ValueError("The tuples of the list must have \
                                      exactly two(2) elements")
             else:
-                return {c:function(*self.getChannel(list(c))) for c in
+                return {c: function(*self.getChannel(list(c))) for c in
                         permutate(channels, 2)}
         else:
             raise ValueError("This method only accepts list (either of int\
                               and str or tuples) or tuple types and not %s" %
                              type(channels))
-                    
 
-    def getFourierTransform(self, i=None,  windowFunction=None):
+    def getFourierTransform(self, i=None, windowFunction=None):
         """
         Returns the Discrete Fourier Transform of the data at a given index of
         the window.
@@ -363,7 +360,7 @@ class EEG:
             * slice: a slice selecting the range of channels that will be
               used.
             * None: all the channels will be used.
-        
+
         windowFunction: String or numpy.ndarray, optional
             This can be a String with the name of the function (currently only
             supported **"hamming"**) or it can be a numpy array with a size
@@ -377,8 +374,8 @@ class EEG:
             An array with the result of the Fourier Transform. If more than one
             channel was selected the array will be of 2 Dimensions.
         """
-        windowFunction=self.__handleWindowFunction(windowFunction)
-        return self.__applyFunctionTo(lambda x:np.fft.fft(x*windowFunction), i)
+        windowFunction = self.__handleWindowFunction(windowFunction)
+        return self.__applyFunctionTo(lambda x: np.fft.fft(x * windowFunction), i)
 
     # Gets the magnitude of each complex value resulting from a Fourier
     # Transform from a component i
@@ -397,7 +394,7 @@ class EEG:
             * slice: a slice selecting the range of channels that will be
               used.
             * None: all the channels will be used.
-            
+
         windowFunction: String or numpy.ndarray, optional
             This can be a String with the name of the function (currently only
             supported **"hamming"**) or it can be a numpy array with a size
@@ -411,7 +408,7 @@ class EEG:
             An array with the magnitudes of the Fourier Transform. If more than
             one channel was selected the array will be of 2 Dimensions.
         """
-        return abs(self.getFourierTransform(*args,**kargs))
+        return abs(self.getFourierTransform(*args, **kargs))
 
     def getAverageBandValues(self, i=None, bands=defaultBands, *args, **kargs):
         """
@@ -433,7 +430,7 @@ class EEG:
             This parameter is used to indicate the bands that are going to be
             used. It is a dict with the name of each band as key and a tuple
             with the lower and upper bounds as value.
-        
+
         windowFunction: String or numpy.ndarray, optional
             This can be a String with the name of the function (currently only
             supported **"hamming"**) or it can be a numpy array with a size
@@ -448,21 +445,21 @@ class EEG:
             the magnitudes. If more than one channel was selected the return
             object will be a list containing the dict for each channel selected
         """
-        magnitudes = self.getMagnitudes(i,*args,**kargs)
-        bands={key:self.getBoundsForBand(b) for key,b in bands.items()}
-        if magnitudes.ndim==1:
-            return averageBandValues(magnitudes,bands)
+        magnitudes = self.getMagnitudes(i, *args, **kargs)
+        bands = {key: self.getBoundsForBand(b) for key, b in bands.items()}
+        if magnitudes.ndim == 1:
+            return averageBandValues(magnitudes, bands)
         else:
-            averagedValues=[]
+            averagedValues = []
             for c in magnitudes:
-                averagedValues.append(averageBandValues(c,bands))
+                averagedValues.append(averageBandValues(c, bands))
             return averagedValues
 
     def getBoundsForBand(self, bandBounds):
         """
         Returns the bounds of each band depending of the sample rate and the
         window size.
-        
+
         Parameters
         ----------
         bandbounds: tuple
@@ -473,8 +470,8 @@ class EEG:
         tuple
             A tuple containig the the new bounds of the given band.
         """
-        return tuple(map(lambda val: 
-            int(val * self.windowSize / self.sampleRate), bandBounds))
+        return tuple(map(lambda val:
+                         int(val * self.windowSize / self.sampleRate), bandBounds))
 
     def getSignalAtBands(self, i=None, bands=defaultBands):
         """
@@ -506,12 +503,12 @@ class EEG:
             will be a dict containing 2D arrays in which each row is a signal
             filtered at the corresponding channel.
         """
-        
+
         bandsSignals = {}
         for key, band in bands.items():
             bounds = self.getBoundsForBand(band)
-            bandsSignals[key]=self.__applyFunctionTo(lambda x: 
-                bandPassFilter(x, self.sampleRate, bounds[0], bounds[1]), i)
+            bandsSignals[key] = self.__applyFunctionTo(lambda x:
+                                                       bandPassFilter(x, self.sampleRate, bounds[0], bounds[1]), i)
 
         return bandsSignals
 
@@ -538,8 +535,8 @@ class EEG:
             return object will be a 1D array containing the result of the
             procesing.
         """
-        return self.__applyFunctionTo(PFD,i)
-    
+        return self.__applyFunctionTo(PFD, i)
+
     def HFD(self, i=None, kMax=None):
         """
         Returns the Higuchi Fractal Dimension at the given index of the window.
@@ -564,7 +561,7 @@ class EEG:
             return object will be a 1D array containing the result of the
             procesing.
         """
-        return self.__applyFunctionTo(lambda v:HFD(v,kMax),i)
+        return self.__applyFunctionTo(lambda v: HFD(v, kMax), i)
 
     # Hjorth Parameters:
     def hjorthActivity(self, i=None):
@@ -583,7 +580,7 @@ class EEG:
             return object will be a 1D array containing the result of the
             procesing.
         """
-        return self.__applyFunctionTo(hjorthActivity,i)
+        return self.__applyFunctionTo(hjorthActivity, i)
 
     def hjorthMobility(self, i=None):
         """
@@ -607,7 +604,7 @@ class EEG:
             return object will be a 1D array containing the result of the
             procesing.
         """
-        return self.__applyFunctionTo(hjorthMobility,i)
+        return self.__applyFunctionTo(hjorthMobility, i)
 
     def hjorthComplexity(self, i=None):
         """
@@ -631,9 +628,9 @@ class EEG:
             return object will be a 1D array containing the result of the
             procesing.
         """
-        return self.__applyFunctionTo(hjorthComplexity,i)
+        return self.__applyFunctionTo(hjorthComplexity, i)
 
-    def synchronizationLikelihood(self, channels = None, allPermutations=False,
+    def synchronizationLikelihood(self, channels=None, allPermutations=False,
                                   m=None, l=None, w1=None, w2=None, pRef=0.05,
                                   **kargs):
         """
@@ -672,17 +669,16 @@ class EEG:
             to those channels.
         """
         if l == None:
-            l=1
-        if m==None:
-            m=int(np.sqrt(self.windowSize))
+            l = 1
+        if m == None:
+            m = int(np.sqrt(self.windowSize))
         l = 1 if l == 0 else l
-        if w1==None:
+        if w1 == None:
             w1 = int(2 * l * (m - 1))
         if w2 == None:
             w2 = int(10 // pRef + w1)
-        return self.__applyFunctionTo2C(lambda c1,c2:synchronizationLikelihood(
-                                             c1,c2, m, l, w1, w2, pRef,**kargs)
-                                        ,channels, allPermutations)
+        return self.__applyFunctionTo2C(lambda c1, c2: synchronizationLikelihood(
+            c1, c2, m, l, w1, w2, pRef, **kargs), channels, allPermutations)
 
     def engagementLevel(self):
         """
@@ -705,11 +701,11 @@ class EEG:
         alpha, beta, theta = np.mean(alphas), np.mean(betas), np.mean(thetas)
 
         return beta / (alpha + theta)
-    
+
     def MSE(self, i=None, *args, **kargs):
         """
         Returns Multiscale Sample Entropy at the given channel/s.
-        
+
         Parameters
         ----------
         i: Variable type, optional
@@ -729,7 +725,7 @@ class EEG:
         fr: float, optional
             Fraction of std(data) used as tolerance. If r is passed, this
             parameter is ignored. By default, 0.2.
-        
+
         Returns
         -------
         float or array
@@ -737,12 +733,12 @@ class EEG:
             return object will be a 1D array containing the result of the
             procesing. 
         """
-        return self.__applyFunctionTo(lambda x: MSE(x,*args, **kargs), i)
-    
+        return self.__applyFunctionTo(lambda x: MSE(x, *args, **kargs), i)
+
     def LZC(self, i=None, *args, **kargs):
         """
         Returns the Lempel-Ziv Complexity at the given channel/s.
-        
+
         Parameters
         ----------
         i: Variable type, optional
@@ -761,7 +757,7 @@ class EEG:
             If True the resulting value will be between 0 and 1, being 0 the
             minimal posible complexity of a sequence that has the same lenght 
             of data and 1 the maximal posible complexity. By default, False.
-        
+
         Returns
         -------
         float or array
@@ -770,11 +766,11 @@ class EEG:
             procesing.
         """
         return self.__applyFunctionTo(lambda x: LZC(x, *args, **kargs), i)
-    
+
     def DFA(self, i=None, *args, **kargs):
         """
         Applies Detrended Fluctuation Analysis algorithm to the given data.
-        
+
         Parameters
         ----------
          i: Variable type, optional
@@ -793,7 +789,7 @@ class EEG:
         fskip: float, optional
             Fraction of the window that will be skiped in each iteration for 
             each window size. Default: 1.
-        
+
         Returns
         -------
         float or array
@@ -802,12 +798,12 @@ class EEG:
             procesing.
         """
         return self.__applyFunctionTo(lambda x: DFA(x, *args, **kargs), i)
-    
-    def CCC(self, channels = None, allPermutations=False):
+
+    def CCC(self, channels=None, allPermutations=False):
         """
         Computes the Cross Correlation Coeficient between the data in c1 and
         the data in c2.
-    
+
         Parameters
         ----------
         channels: Variable type, optional
@@ -816,7 +812,7 @@ class EEG:
         allPermutations: bool, optional
             In order to understand how this parameter works go to the doc of
            :py:meth:`eeglib.eeg.EEG.__applyFunctionTo2C` 
-        
+
         Returns
         -------
         float or dict

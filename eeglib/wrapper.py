@@ -1,14 +1,16 @@
 import pandas as pd
 from eeglib.auxFunctions import flatData
 
+
 class Wrapper():
     """
     This class wraps around a helper and allows getting multiple features at
     once. The main usage of this class if for generating features to use with
     machine learning techniques.
     """
-    def __init__(self, helper, flat = True, store=True, label = None,
-                 segmentation = None):
+
+    def __init__(self, helper, flat=True, store=True, label=None,
+                 segmentation=None):
         """
         Parameters
         ----------
@@ -37,34 +39,34 @@ class Wrapper():
         """
         self.helper = helper
         self.iterator = iter(self.helper)
-        
+
         self.functions = {}
-        
+
         self.flat = flat
-        
+
         self.store = store
         self.lastStored = -1
         if store:
             self.storedFeatures = []
-        
+
         self.label = label
         if segmentation:
-            self.segmentation = [((self.helper._handleIndex(s0), 
-                                   self.helper._handleIndex(se)), label) 
+            self.segmentation = [((self.helper._handleIndex(s0),
+                                   self.helper._handleIndex(se)), label)
                                  for (s0, se), label in segmentation]
             self.segmentation = sorted(self.segmentation)
             self.segmentationIndex = 0
         else:
             self.segmentation = None
-    
+
     def __iter__(self):
         self.iterator = iter(self.helper)
         return self
-    
+
     def __next__(self):
         next(self.iterator)
         return self.getFeatures()
-    
+
     def addFeatures(self, features):
         """
         Parameters
@@ -74,44 +76,43 @@ class Wrapper():
             add a single feature.
         """
         for f in features:
-            self.addFeature(f[0],*f[1],**f[2])
+            self.addFeature(f[0], *f[1], **f[2])
 
     def addFeature(self, name, *args, **kargs):
         """
         Adds a feature that will be returned in every
-        
+
         Parameters
         ----------
         name: str
             The name of the function to call.
         *args and **kargs:
             Parameters of the function that computes the feature.
-        
+
         Returns
         -------
         None
         """
         f = getattr(self.helper.eeg, name)
-        self.functions[name+str(args)+str(kargs)]=(lambda: f(*args, **kargs))
-    
-    
+        self.functions[name + str(args) + str(kargs)
+                       ] = (lambda: f(*args, **kargs))
+
     def featuresNames(self):
         """
         Returns the names of the specified features.
         """
         return self.functions.keys()
-    
-    
+
     def getFeatures(self, flat=None):
         """
         Returns the features in the current window of the helper iterator.
-        
+
         Parameters
         ----------
         flat: Boolean, optional
             Used to force the data to be flatten or not. If None it will apply
             the value specified in the constructor. Default: None
-        
+
         Returns
         -------
         pandas.Series
@@ -121,11 +122,11 @@ class Wrapper():
         else:
             if not flat:
                 flat = self.flat
-            
-            features = {name:f() for name, f in self.functions.items()}
+
+            features = {name: f() for name, f in self.functions.items()}
             if self.flat:
-                features = flatData(features,"")
-            
+                features = flatData(features, "")
+
             if self.segmentation:
                 loop = True
                 features["segment_label"] = 0
@@ -135,18 +136,18 @@ class Wrapper():
                     if curSeg[0] <= curPoint < curSeg[1]:
                         features["segment_label"] = curLab
                         loop = False
-                    elif curPoint <curSeg[0]:
+                    elif curPoint < curSeg[0]:
                         loop = False
                     else:
-                        self.segmentationIndex+=1
-            
+                        self.segmentationIndex += 1
+
             if self.label is not None:
                 features["label"] = self.label
-            
+
             if self.store:
                 self.storedFeatures.append(features)
                 self.lastStored = self.iterator.auxPoint
-        
+
         return pd.Series(features)
 
     def getStoredFeatures(self):
@@ -156,19 +157,19 @@ class Wrapper():
         """
         if self.store:
             return pd.DataFrame(self.storedFeatures)
-        
+
     def getAllFeatures(self):
         """
         Iterates over all the windows in the helper and returns all the values.
-        
+
         Returns
         -------
         pandas.DataFrame
         """
-        data=[features for features in self]
+        data = [features for features in self]
         if self.store:
-            data=self.storedFeatures+data
+            data = self.storedFeatures + data
         return pd.DataFrame(data)
-    
+
     def reset(self):
         self.iterator = iter(self.helper)
